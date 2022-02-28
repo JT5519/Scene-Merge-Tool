@@ -26,12 +26,13 @@ public class SceneMergeWizard : ScriptableWizard
 			Scene nextScene = EditorSceneManager.GetSceneByName(item.name);
 			EditorSceneManager.MergeScenes(nextScene, destScene);
 		}
+		EditorSceneManager.MarkSceneDirty(destScene);
 	}
 
 	private void OnWizardOtherButton()
     {
 		EditorSceneManager.SaveCurrentModifiedScenesIfUserWantsTo();
-		EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
+		EditorSceneManager.OpenScene(AssetDatabase.GetAssetPath(destinationScene),OpenSceneMode.Single);
 
 		foreach (SceneAsset item in scenesToCombine)
 			EditorSceneManager.OpenScene(AssetDatabase.GetAssetPath(item), OpenSceneMode.Additive);
