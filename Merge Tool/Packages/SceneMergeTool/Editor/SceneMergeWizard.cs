@@ -1,40 +1,49 @@
 using System.Collections.Generic;
-using UnityEngine;
 using UnityEditor;
-using System.IO;
+using UnityEngine;
 using UnityEditor.SceneManagement;
 using UnityEngine.SceneManagement;
 
 public class SceneMergeWizard : ScriptableWizard
 {
-	public SceneAsset destinationScene;
-	public List<SceneAsset> scenesToCombine;
-
+	public SceneAsset sourceSceneAsset;
+	public SceneAsset destinationSceneAsset;
 
 	[MenuItem("Merge Tool/Load Merge Wizard...")]
 	static void Merge()
 	{
-		ScriptableWizard.DisplayWizard<SceneMergeWizard>("Scene Merging Wizard", "Merge", "Load Combined");	
+		ScriptableWizard.DisplayWizard<SceneMergeWizard>("Scene Merger", "Merge");	
 	}
 
+    private void OnWizardUpdate()
+    {
+		if (!sourceSceneAsset|| !destinationSceneAsset)
+		{
+			isValid = false;
+			errorString = "Source and Destination scenes need to be set before merge is possible!";
+		}
+		else
+        {
+			isValid = true;
+			errorString = "";
+        }
+    }
     private void OnWizardCreate()
 	{
-		
-		Scene destScene = EditorSceneManager.GetSceneByName(destinationScene.name);
-		foreach (SceneAsset item in scenesToCombine)
+		Scene sourceScene = SceneManager.GetSceneByName(sourceSceneAsset.name);
+		Scene destScene = SceneManager.GetSceneByName(destinationSceneAsset.name);
+
+		if (!sourceScene.IsValid())
 		{
-			Scene nextScene = EditorSceneManager.GetSceneByName(item.name);
-			EditorSceneManager.MergeScenes(nextScene, destScene);
+			sourceScene = EditorSceneManager.OpenScene(AssetDatabase.GetAssetPath(sourceSceneAsset), OpenSceneMode.Additive);
+
 		}
-		EditorSceneManager.MarkSceneDirty(destScene);
-	}
-
-	private void OnWizardOtherButton()
-    {
+		if (!destScene.IsValid())
+		{
+			destScene = EditorSceneManager.OpenScene(AssetDatabase.GetAssetPath(destinationSceneAsset), OpenSceneMode.Additive);
+		}
 		EditorSceneManager.SaveCurrentModifiedScenesIfUserWantsTo();
-		EditorSceneManager.OpenScene(AssetDatabase.GetAssetPath(destinationScene),OpenSceneMode.Single);
-
-		foreach (SceneAsset item in scenesToCombine)
-			EditorSceneManager.OpenScene(AssetDatabase.GetAssetPath(item), OpenSceneMode.Additive);
+		EditorSceneManager.MergeScenes(sourceScene, destScene);
+		EditorSceneManager.MarkSceneDirty(destScene);
 	}
 }
