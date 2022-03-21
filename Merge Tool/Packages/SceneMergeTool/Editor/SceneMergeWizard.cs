@@ -77,6 +77,10 @@ public class SceneMergeWizard : ScriptableWizard
 
 			return;
         }
+		else if(sourceArray.Length == 0 && sourceParent && destinationParent)
+        {
+			return;
+        }
 		
 		//recursive iteration, can have devastating time complexity
 		foreach(GameObject modified in destArray)
