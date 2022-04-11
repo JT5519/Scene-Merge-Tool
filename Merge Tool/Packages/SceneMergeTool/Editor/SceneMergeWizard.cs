@@ -36,14 +36,10 @@ public class SceneMergeWizard : ScriptableWizard
 		Scene modifiedScene = SceneManager.GetSceneByName(modifiedSceneAsset.name);
 
 		if (!modifierScene.IsValid())
-		{
 			modifierScene = EditorSceneManager.OpenScene(AssetDatabase.GetAssetPath(modifierSceneAsset), OpenSceneMode.Additive);
-
-		}
 		if (!modifiedScene.IsValid())
-		{
 			modifiedScene = EditorSceneManager.OpenScene(AssetDatabase.GetAssetPath(modifiedSceneAsset), OpenSceneMode.Additive);
-		}
+		
 		EditorSceneManager.SaveCurrentModifiedScenesIfUserWantsTo();
 		SceneManager.SetActiveScene(modifiedScene);
 
