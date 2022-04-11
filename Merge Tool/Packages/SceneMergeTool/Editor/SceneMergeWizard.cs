@@ -53,11 +53,11 @@ public class SceneMergeWizard : ScriptableWizard
 		HashSet<GameObject> modifierSceneObjects = new HashSet<GameObject>(modifierRootObjects);
 
 		//smart merge (is recursive)
-		SmartMerge(ref modifierRootObjects, ref modifiedRootObjects, ref modifierSceneObjects);
+		SmartMerge(modifierRootObjects,modifiedRootObjects,modifierSceneObjects);
 
 		EditorSceneManager.MarkSceneDirty(modifiedScene);
 	}
-	private static void SmartMerge(ref GameObject[] sourceArray, ref GameObject[] destArray, ref HashSet<GameObject> modifierSceneObjects,
+	private void SmartMerge(GameObject[] sourceArray, GameObject[] destArray, HashSet<GameObject> modifierSceneObjects,
 														GameObject sourceParent = null, GameObject destinationParent = null)
     {
 		
@@ -70,46 +70,38 @@ public class SceneMergeWizard : ScriptableWizard
 				GameObject childClone = Object.Instantiate(child);
 				childClone.transform.SetParent(destinationParent.transform);
             }
-
-			/*
-			 * Add extra components (if present) from modifier to modified
-			*/
-
 			return;
         }
 		else if(sourceArray.Length == 0 && sourceParent && destinationParent)
-        {
 			return;
-        }
+
+		//to track modified scene objects already mapped to a modifier scene object
+		HashSet<GameObject> modifiedSceneObjects = new HashSet<GameObject>(destArray);
 		
 		//recursive iteration, can have devastating time complexity
 		foreach(GameObject modified in destArray)
         {
 			foreach(GameObject modifier in sourceArray)
             {
-				//if objects are equal
-				if(CompareGameObjects(modifier,modified))
+				//if current two objects are equal, and the modifier object hasnt already been deemed equal to another object
+				if(CompareGameObjects(modifier,modified) && modifierSceneObjects.Contains(modifier) && modifiedSceneObjects.Contains(modified))
                 {
+					//Smart merge components
+					SmartMergeComponents(modified, modifier);
+
 					//create two new arrays of child game objects
-					GameObject[] newSource = new GameObject[modifier.transform.childCount];
-					GameObject[] newDest = new GameObject[modified.transform.childCount];				
-					for (int i = 0;i<newSource.Length;i++)
-                    {
-						newSource[i] = modifier.transform.GetChild(i).gameObject;
-                    }
-					for (int i = 0; i < newDest.Length; i++)
-					{
-						newDest[i] = modified.transform.GetChild(i).gameObject;
-					}
+					GameObject[] newSource = GenerateChildObjectArray(modifier);
+					GameObject[] newDest = GenerateChildObjectArray(modified);
 					
 					//new hashset for modifier's child game objects
 					HashSet<GameObject> newModifierSceneObjects = new HashSet<GameObject>(newSource);
+                    
+                    //recursive smart merge on child objects
+                    SmartMerge(newSource,newDest,newModifierSceneObjects, modifier, modified);
 
-					//recursive smart merge on child objects
-					SmartMerge(ref newSource,ref newDest, ref newModifierSceneObjects, modifier, modified);
-
-					//modifier object has been handled, remove it from the modifier objects set
+					//modified and modifier objects have been handled, remove them from respective sets
 					modifierSceneObjects.Remove(modifier);
+					modifiedSceneObjects.Remove(modified);
 				}
             }
         }
@@ -119,9 +111,7 @@ public class SceneMergeWizard : ScriptableWizard
 		{
 			GameObject objClone = Object.Instantiate(remainingObjects);
 			if(destinationParent)
-            {
 				objClone.transform.SetParent(destinationParent.transform);
-            }
 		}
 	}
 	private static bool CompareGameObjects(GameObject obj1, GameObject obj2)
@@ -131,4 +121,41 @@ public class SceneMergeWizard : ScriptableWizard
 			return true;
 		return false;
     }
+	private GameObject[] GenerateChildObjectArray(GameObject obj)
+    {
+		GameObject[] childArray = new GameObject[obj.transform.childCount];
+
+		for (int i = 0; i < childArray.Length; i++)
+			childArray[i] = obj.transform.GetChild(i).gameObject;
+
+		return childArray;
+	}
+	private void SmartMergeComponents(GameObject modified, GameObject modifier)
+    {
+		HashSet<Component> modifierComponents = new HashSet<Component>(modifier.GetComponents<Component>());
+		HashSet<Component> modifiedComponents = new HashSet<Component>(modified.GetComponents<Component>());
+
+		foreach (Component modifiedComponent in modified.GetComponents<Component>())
+		{
+			foreach (Component modifierComponent in modifier.GetComponents<Component>())
+			{
+				if (modifierComponent.GetType() == modifiedComponent.GetType() && modifierComponents.Contains(modifierComponent) && modifiedComponents.Contains(modifiedComponent))
+				{
+					//TODO: Conflict handling of the two components
+
+					//remove from component list for one-to-one matching
+					modifierComponents.Remove(modifierComponent);
+					modifiedComponents.Remove(modifiedComponent);
+				}
+			}
+		}
+
+		//Add unique components in modifier scene to modified scene
+		foreach (Component remainingComponent in modifierComponents)
+		{
+			modified.AddComponent(remainingComponent.GetType());
+
+			//TODO: component specific value modifications 
+		}
+	}
 }
