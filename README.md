@@ -18,7 +18,7 @@ This is a a tool that makes merging two scenes in Unity easy. The tools intended
 1. Parameters:
    1. Modifier Scene: The scene that merges into the Modified scene.
    2. Modified Scene: The scene that is merged into by the Modifier scene.
-   3. Apply Prefab Overrides: Checking this boolean ensures that all overrides to prefabs in the Modifier scene are applied to the respective prefab assets before merging the two scenes. This ensures newly instantiated prefab instances in the modified scene will have those changes.
+   3. Apply Prefab Overrides: Checking this boolean ensures that all overrides to prefabs in the Modifier scene are applied to their respective prefab assets before merging begins. This ensures newly instantiated prefab instances in the modified scene will have those changes.
 2. Dragging the the approriate 'SceneAssets' to both parameters, validates the Scriptable Wizard and enables the "Merge" button which can now be clicked to have these two scenes merge.
 
 
