@@ -10,7 +10,8 @@ public class SceneMergeWizard : ScriptableWizard
 	public SceneAsset modifierSceneAsset;
 	[Tooltip("Additvely merged into by the \"Modifier\" scene.")]
 	public SceneAsset modifiedSceneAsset;
-
+	[Tooltip("Applies all prefab overrides in the modifier scene, before merging. If false, then newly created prefab instances, in the modified scene during the merge, will not have their modifier scene overrides.")]
+	public bool applyPrefabOverrides = true;
 	[MenuItem("Merge Tool/Load Merge Wizard...")]
 	static void Merge()
 	{
@@ -63,7 +64,18 @@ public class SceneMergeWizard : ScriptableWizard
 			//Adding children from source to destination
 			foreach(GameObject child in sourceArray)
             {
-				GameObject childClone = Object.Instantiate(child);
+				GameObject childClone = null;
+
+				if (PrefabUtility.IsAnyPrefabInstanceRoot(child))
+				{
+					if(applyPrefabOverrides)
+						PrefabUtility.ApplyPrefabInstance(child, InteractionMode.UserAction);
+					GameObject objectSource = PrefabUtility.GetCorrespondingObjectFromOriginalSource(child);
+					childClone = PrefabUtility.InstantiatePrefab(objectSource) as GameObject;
+				}
+				else
+					childClone = GameObject.Instantiate(child);
+				
 				childClone.transform.SetParent(destinationParent.transform);
             }
 			return;
@@ -105,16 +117,37 @@ public class SceneMergeWizard : ScriptableWizard
 		//add remaining objects from modifier scene
 		foreach (GameObject remainingObjects in modifierSceneObjects)
 		{
-			GameObject objClone = Object.Instantiate(remainingObjects);
-			if(destinationParent)
+			GameObject objClone = null;
+			if (PrefabUtility.IsAnyPrefabInstanceRoot(remainingObjects))
+			{
+				if (applyPrefabOverrides)
+					PrefabUtility.ApplyPrefabInstance(remainingObjects, InteractionMode.UserAction);
+
+				GameObject objectSource = PrefabUtility.GetCorrespondingObjectFromOriginalSource(remainingObjects);
+				objClone = PrefabUtility.InstantiatePrefab(objectSource) as GameObject;
+			}
+			else
+				objClone = GameObject.Instantiate(remainingObjects);
+
+			if (destinationParent)
 				objClone.transform.SetParent(destinationParent.transform);
 		}
 	}
 	private static bool CompareGameObjects(GameObject obj1, GameObject obj2)
     {
 		//two objects are equal if they have the same Name, Layer, Tag, and static status
-		if (obj1.isStatic == obj2.isStatic && obj1.name == obj2.name && obj1.layer == obj2.layer && obj1.tag == obj2.tag)
+		if (obj1.isStatic == obj2.isStatic && obj1.name == obj2.name && obj1.layer == obj2.layer && obj1.tag == obj2.tag && ComparePrefabness(obj1,obj2))
 			return true;
+
+		return false;
+    }
+	private static bool ComparePrefabness(GameObject obj1, GameObject obj2)
+    {
+		if (PrefabUtility.IsOutermostPrefabInstanceRoot(obj1) == PrefabUtility.IsOutermostPrefabInstanceRoot(obj1)
+		 && PrefabUtility.IsAnyPrefabInstanceRoot(obj1) == PrefabUtility.IsAnyPrefabInstanceRoot(obj2)
+	   	 && PrefabUtility.IsPartOfPrefabInstance(obj1) == PrefabUtility.IsPartOfPrefabInstance(obj2))
+			return true;
+		
 		return false;
     }
 	private GameObject[] GenerateChildObjectArray(GameObject obj)
