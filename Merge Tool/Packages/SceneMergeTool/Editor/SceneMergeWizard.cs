@@ -10,8 +10,10 @@ public class SceneMergeWizard : ScriptableWizard
 	public SceneAsset modifierSceneAsset;
 	[Tooltip("Additvely merged into by the \"Modifier\" scene.")]
 	public SceneAsset modifiedSceneAsset;
-	[Tooltip("Applies all prefab overrides in the modifier scene, before merging. If false, then newly created prefab instances, in the modified scene during the merge, will not have their modifier scene overrides.")]
-	public bool applyPrefabOverrides = true;
+
+	Scene modifierScene;
+	Scene modifiedScene;
+
 	[MenuItem("Merge Tool/Load Merge Wizard...")]
 	static void Merge()
 	{
@@ -33,8 +35,8 @@ public class SceneMergeWizard : ScriptableWizard
     }
     private void OnWizardCreate()
 	{
-		Scene modifierScene = SceneManager.GetSceneByName(modifierSceneAsset.name);
-		Scene modifiedScene = SceneManager.GetSceneByName(modifiedSceneAsset.name);
+		modifierScene = SceneManager.GetSceneByName(modifierSceneAsset.name);
+		modifiedScene = SceneManager.GetSceneByName(modifiedSceneAsset.name);
 
 		if (!modifierScene.IsValid())
 			modifierScene = EditorSceneManager.OpenScene(AssetDatabase.GetAssetPath(modifierSceneAsset), OpenSceneMode.Additive);
@@ -64,14 +66,21 @@ public class SceneMergeWizard : ScriptableWizard
 			//Adding children from source to destination
 			foreach(GameObject child in sourceArray)
             {
-				GameObject childClone = null;
+				GameObject childClone;
 
 				if (PrefabUtility.IsAnyPrefabInstanceRoot(child))
 				{
-					if(applyPrefabOverrides)
-						PrefabUtility.ApplyPrefabInstance(child, InteractionMode.UserAction);
-					GameObject objectSource = PrefabUtility.GetCorrespondingObjectFromOriginalSource(child);
-					childClone = PrefabUtility.InstantiatePrefab(objectSource) as GameObject;
+					SceneManager.SetActiveScene(modifierScene);
+					var previousSelection = Selection.objects;
+
+					Selection.activeGameObject = child;
+					Unsupported.DuplicateGameObjectsUsingPasteboard();
+					childClone = Selection.activeGameObject;
+					childClone.transform.parent = null;
+					SceneManager.MoveGameObjectToScene(childClone, modifiedScene);
+
+					Selection.objects = previousSelection;
+					SceneManager.SetActiveScene(modifiedScene);
 				}
 				else
 					childClone = GameObject.Instantiate(child);
@@ -117,14 +126,20 @@ public class SceneMergeWizard : ScriptableWizard
 		//add remaining objects from modifier scene
 		foreach (GameObject remainingObjects in modifierSceneObjects)
 		{
-			GameObject objClone = null;
+			GameObject objClone;
 			if (PrefabUtility.IsAnyPrefabInstanceRoot(remainingObjects))
 			{
-				if (applyPrefabOverrides)
-					PrefabUtility.ApplyPrefabInstance(remainingObjects, InteractionMode.UserAction);
+				SceneManager.SetActiveScene(modifierScene);
+				var previousSelection = Selection.objects;
 
-				GameObject objectSource = PrefabUtility.GetCorrespondingObjectFromOriginalSource(remainingObjects);
-				objClone = PrefabUtility.InstantiatePrefab(objectSource) as GameObject;
+				Selection.activeGameObject = remainingObjects;
+				Unsupported.DuplicateGameObjectsUsingPasteboard();
+				objClone = Selection.activeGameObject;
+				objClone.transform.parent = null;
+				SceneManager.MoveGameObjectToScene(objClone, modifiedScene);
+
+				Selection.objects = previousSelection;
+				SceneManager.SetActiveScene(modifiedScene);
 			}
 			else
 				objClone = GameObject.Instantiate(remainingObjects);
@@ -183,7 +198,6 @@ public class SceneMergeWizard : ScriptableWizard
 		foreach (Component remainingComponent in modifierComponents)
 		{
 			modified.AddComponent(remainingComponent);
-			//TODO: component specific value modifications 
 		}
 	}
 }
