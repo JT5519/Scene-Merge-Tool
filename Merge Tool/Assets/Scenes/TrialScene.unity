@@ -599,7 +599,7 @@ GameObject:
   - component: {fileID: 1377646192}
   - component: {fileID: 1377646191}
   m_Layer: 0
-  m_Name: Sphere
+  m_Name: Sphere2
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -616,8 +616,8 @@ BoxCollider:
   m_IsTrigger: 0
   m_Enabled: 1
   serializedVersion: 2
-  m_Size: {x: 1, y: 1, z: 1}
-  m_Center: {x: 0, y: 0, z: 0}
+  m_Size: {x: 4.8992686, y: 1, z: 2.6260486}
+  m_Center: {x: -0.22034955, y: 0, z: 0.0103805065}
 --- !u!23 &1377646192
 MeshRenderer:
   m_ObjectHideFlags: 0

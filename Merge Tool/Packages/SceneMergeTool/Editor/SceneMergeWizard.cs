@@ -182,8 +182,7 @@ public class SceneMergeWizard : ScriptableWizard
 		//Add unique components in modifier scene to modified scene
 		foreach (Component remainingComponent in modifierComponents)
 		{
-			modified.AddComponent(remainingComponent.GetType());
-
+			modified.AddComponent(remainingComponent);
 			//TODO: component specific value modifications 
 		}
 	}
