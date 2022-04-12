@@ -1,6 +1,6 @@
 # Scene-Merge-Tool
 
-v1.2.0 is downloadable [here](https://github.com/JT5519/Scene-Merge-Tool/releases). It is a .zip that can be added to Unity using UPM (Unity Package Manager).
+v1.3.1-alpha is downloadable [here](https://github.com/JT5519/Scene-Merge-Tool/releases/tag/v1.3.1-alpha). It is a .zip that can be added to Unity using UPM (Unity Package Manager).
 
 ## Overview
 This is a a tool that makes merging two scenes in Unity easy. The tools intended use case is to sit on a level above version control, where on an individual feature branch, multiple team member may work on sub-features parallelly. Merging these features is usually done through prefabs, but this tool eliminates the need for that unless necessary. It uses a recursive smart merge algorithm I built myself, that merges all objects in the two scenes, and recursively merges objects it deems as the same (based on certain parameters) with the recursion smartly merging the child objects as well, all the way down the hierarchy. 
@@ -18,10 +18,10 @@ This is a a tool that makes merging two scenes in Unity easy. The tools intended
 1. Parameters:
    1. Modifier Scene: The scene that merges into the Modified scene.
    2. Modified Scene: The scene that is merged into by the Modifier scene.
-   3. Apply Prefab Overrides: Checking this boolean ensures that all overrides to prefabs in the Modifier scene are applied to their respective prefab assets before merging begins. This ensures newly instantiated prefab instances in the modified scene will have those changes.
 2. Dragging the the approriate 'SceneAssets' to both parameters, validates the Scriptable Wizard and enables the "Merge" button which can now be clicked to have these two scenes merge.
 
 
 ## Future Updates:
-QoS and QoL updates.
+1. Component conflicts handling
+2. Instantiated object's name cleanup, i.e., removing the extra "(Clone)" or "(1)" that appends to the end of instantiated/duplicated objects
  
