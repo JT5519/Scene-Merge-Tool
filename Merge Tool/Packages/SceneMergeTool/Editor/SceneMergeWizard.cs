@@ -10,6 +10,12 @@ public class SceneMergeWizard : ScriptableWizard
 	public SceneAsset modifierSceneAsset;
 	[Tooltip("Additvely merged into by the \"Modifier\" scene.")]
 	public SceneAsset modifiedSceneAsset;
+	public enum SceneChoice
+    {
+		ModifiedScene=0, ModifierScene
+    }
+	[Tooltip("Which scene's object's component values to use in the case that two objects deemed equal have the same component but varying values.")]
+	public SceneChoice componentOverridePreference;
 
 	Scene modifierScene;
 	Scene modifiedScene;
@@ -155,17 +161,31 @@ public class SceneMergeWizard : ScriptableWizard
 		HashSet<Component> modifierComponents = new HashSet<Component>(modifier.GetComponents<Component>());
 		HashSet<Component> modifiedComponents = new HashSet<Component>(modified.GetComponents<Component>());
 
+		//transforms will be dealt with separately
+		modifierComponents.Remove(modifier.GetComponent<Transform>());
+		modifiedComponents.Remove(modified.GetComponent<Transform>());
+
+		//handle components that both objects have
 		foreach (Component modifiedComponent in modified.GetComponents<Component>())
 		{
+			if (modifiedComponent == null) //a destroyed component is being accessed
+				continue;
+
 			foreach (Component modifierComponent in modifier.GetComponents<Component>())
 			{
 				if (modifierComponent.GetType() == modifiedComponent.GetType() && modifierComponents.Contains(modifierComponent) && modifiedComponents.Contains(modifiedComponent))
 				{
-					//TODO: Conflict handling of the two components
-
 					//remove from component list for one-to-one matching
 					modifierComponents.Remove(modifierComponent);
 					modifiedComponents.Remove(modifiedComponent);
+
+					//Conflict handling of the two components
+					//if modifier scene value is preferred, destroy the modified scene component and replace with modifier scene component copy
+					if (componentOverridePreference == SceneChoice.ModifierScene)
+					{
+						DestroyImmediate(modifiedComponent);
+						modified.AddComponent(modifierComponent);
+					}
 				}
 			}
 		}
@@ -174,6 +194,17 @@ public class SceneMergeWizard : ScriptableWizard
 		foreach (Component remainingComponent in modifierComponents)
 		{
 			modified.AddComponent(remainingComponent);
+		}
+
+		//handle transforms since
+		if(componentOverridePreference==SceneChoice.ModifierScene)
+        {
+			Transform modifiedTransform = modified.GetComponent<Transform>();
+			Transform modifierTransform = modifier.GetComponent<Transform>();
+
+			modifiedTransform.localPosition = modifierTransform.localPosition;
+			modifiedTransform.localRotation = modifierTransform.localRotation;
+			modifiedTransform.localScale = modifierTransform.localScale;
 		}
 	}
 
