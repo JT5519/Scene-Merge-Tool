@@ -68,20 +68,8 @@ public class SceneMergeWizard : ScriptableWizard
             {
 				GameObject childClone;
 
-				if (PrefabUtility.IsAnyPrefabInstanceRoot(child))
-				{
-					SceneManager.SetActiveScene(modifierScene);
-					var previousSelection = Selection.objects;
-
-					Selection.activeGameObject = child;
-					Unsupported.DuplicateGameObjectsUsingPasteboard();
-					childClone = Selection.activeGameObject;
-					childClone.transform.parent = null;
-					SceneManager.MoveGameObjectToScene(childClone, modifiedScene);
-
-					Selection.objects = previousSelection;
-					SceneManager.SetActiveScene(modifiedScene);
-				}
+				if (PrefabUtility.IsAnyPrefabInstanceRoot(child)) //if object is a prefab 
+					childClone = CreateAndTransferPrefabInstanceDuplicate(child);
 				else
 					childClone = GameObject.Instantiate(child);
 				
@@ -128,19 +116,7 @@ public class SceneMergeWizard : ScriptableWizard
 		{
 			GameObject objClone;
 			if (PrefabUtility.IsAnyPrefabInstanceRoot(remainingObjects))
-			{
-				SceneManager.SetActiveScene(modifierScene);
-				var previousSelection = Selection.objects;
-
-				Selection.activeGameObject = remainingObjects;
-				Unsupported.DuplicateGameObjectsUsingPasteboard();
-				objClone = Selection.activeGameObject;
-				objClone.transform.parent = null;
-				SceneManager.MoveGameObjectToScene(objClone, modifiedScene);
-
-				Selection.objects = previousSelection;
-				SceneManager.SetActiveScene(modifiedScene);
-			}
+				objClone = CreateAndTransferPrefabInstanceDuplicate(remainingObjects);
 			else
 				objClone = GameObject.Instantiate(remainingObjects);
 
@@ -199,5 +175,24 @@ public class SceneMergeWizard : ScriptableWizard
 		{
 			modified.AddComponent(remainingComponent);
 		}
+	}
+
+	//duplicates a prefab instance by mimicing Ctrl+D so that both connection to prefab asset and overrides are preserved
+	//then transfers the instance to the other scene
+	private GameObject CreateAndTransferPrefabInstanceDuplicate(GameObject instance)
+    {
+		SceneManager.SetActiveScene(modifierScene); //temporarily set modifier scene to active
+		var previousSelection = Selection.objects; //save state of previous active selection
+
+		Selection.activeGameObject = instance; //set current prefab instance object as active slection
+		Unsupported.DuplicateGameObjectsUsingPasteboard(); //mimic Ctrl+D functionality
+		GameObject instanceClone = Selection.activeGameObject; //cloned object is the current active selection
+		instanceClone.transform.parent = null; //remove from parent heirarchy to transfer between scenes
+		SceneManager.MoveGameObjectToScene(instanceClone, modifiedScene); //move to modified scene
+
+		SceneManager.SetActiveScene(modifiedScene); //reset active scene
+		Selection.objects = previousSelection; //reset active selection
+
+		return instanceClone;
 	}
 }
