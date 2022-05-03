@@ -78,7 +78,8 @@ public class SceneMergeWizard : ScriptableWizard
 					childClone = CreateAndTransferPrefabInstanceDuplicate(child);
 				else
 					childClone = GameObject.Instantiate(child);
-				
+
+				childClone.name = child.name;
 				childClone.transform.SetParent(destinationParent.transform);
             }
 			return;
@@ -126,6 +127,7 @@ public class SceneMergeWizard : ScriptableWizard
 			else
 				objClone = GameObject.Instantiate(remainingObjects);
 
+			objClone.name = remainingObjects.name;
 			if (destinationParent)
 				objClone.transform.SetParent(destinationParent.transform);
 		}
